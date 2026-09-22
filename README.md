@@ -188,19 +188,9 @@ put(key, value)
 
 初版实现里有三个 bug，都是写完跑一遍才暴露出来的，记录在此备查。
 
-### 1. 扩容没有翻倍 —— `^` 被当成了乘 2
 
-```java
-int newCap = oldCap ^ 2;   // ✗ ^ 是按位异或
-```
 
-`16 ^ 2 = 18`，容量不翻倍且不再是 2 的幂；更麻烦的是 `18 ^ 2 = 16`，容量会在 16 与 18 之间来回震荡。实测写入 73 个元素后 `table.length` 仍然是 **18**。
-
-```java
-int newCap = oldCap * 2;   // ✓ 等价于 oldCap << 1
-```
-
-### 2. `hashCode` 为负导致数组越界
+### 1. `hashCode` 为负导致数组越界
 
 ```java
 int index = hash % table.length;   // ✗ Java 的 % 保留符号
@@ -218,7 +208,7 @@ int index = (hash & 0x7FFFFFFF) % table.length;   // ✓ 先抹掉符号位
 
 `put` / `get` / `resize` **三处都要改** —— 扩容重算下标时踩的是同一个坑。
 
-### 3. `getForNullKey()` 判断条件写反
+### 2. `getForNullKey()` 判断条件写反
 
 ```java
 if (cur.key != null) {        // ✗ 找成了「key 不是 null 的节点」
