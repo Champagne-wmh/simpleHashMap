@@ -184,46 +184,6 @@ put(key, value)
 
 ---
 
-## 修复记录
-
-初版实现里有三个 bug，都是写完跑一遍才暴露出来的，记录在此备查。
-
-
-
-### 1. `hashCode` 为负导致数组越界
-
-```java
-int index = hash % table.length;   // ✗ Java 的 % 保留符号
-```
-
-`-1 % 16 == -1`，于是 `map.put(-1, "neg")` 直接抛出：
-
-```
-ArrayIndexOutOfBoundsException: Index -1 out of bounds for length 16
-```
-
-```java
-int index = (hash & 0x7FFFFFFF) % table.length;   // ✓ 先抹掉符号位
-```
-
-`put` / `get` / `resize` **三处都要改** —— 扩容重算下标时踩的是同一个坑。
-
-
-
-它该找的是「key **是** `null` 的节点」，写成 `!=` 之后 `put(null, 1)` 明明存进去了、`size()` 也涨到了 3，但 `get(null)` 永远返回 `null`。
-
-### 修复后实测
-
-| 用例 | 修复前 | 修复后 |
-| --- | --- | --- |
-| `put(-1, "neg")` | 抛 `ArrayIndexOutOfBoundsException` | 正常，`get(-1)` 返回 `"neg"` |
-| 写入 73 个元素后的容量 | 18（没翻倍） | 128（16 → 32 → 64 → 128） |
-| `put(null, 42); get(null)` | `null` | `42` |
-| `main` 输出 | `99 / 2 / null / 3` | `99 / 2 / 1 / 3` |
-| `get("a")` 覆盖语义 | `99` | `99` |
-| `put` 覆盖时返回旧值 | `1` | `1` |
-
----
 
 ## 已知限制
 
