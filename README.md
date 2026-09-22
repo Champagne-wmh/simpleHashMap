@@ -208,13 +208,7 @@ int index = (hash & 0x7FFFFFFF) % table.length;   // ✓ 先抹掉符号位
 
 `put` / `get` / `resize` **三处都要改** —— 扩容重算下标时踩的是同一个坑。
 
-### 2. `getForNullKey()` 判断条件写反
 
-```java
-if (cur.key != null) {        // ✗ 找成了「key 不是 null 的节点」
-    return cur.value;
-}
-```
 
 它该找的是「key **是** `null` 的节点」，写成 `!=` 之后 `put(null, 1)` 明明存进去了、`size()` 也涨到了 3，但 `get(null)` 永远返回 `null`。
 
